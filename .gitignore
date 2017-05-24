@@ -1,0 +1,8 @@
+.*.sw[op]
+.sw[op]
+/.cabal-sandbox
+/dist
+/cabal.sandbox.config
+/misc
+tags
+.stack-work
