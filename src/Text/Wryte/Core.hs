@@ -42,16 +42,15 @@ instance StrLen Text.Text where
 instance StrLen LText.Text where
     strlen = fromIntegral . LText.length
 
-data WryteState =
+data WryteState t =
     WryteState
-        { wryteIndentLevel :: Int
-        , wryteAlignWidth :: Int
+        { wryteIndentStack :: [t]
         , wryteAtLineStart :: Bool
         , wryteCurrentColumn :: Int
         }
         deriving (Show)
 
-defWryteState = WryteState 0 0 True 0
+defWryteState = WryteState [] True 0
 
 data WryteOptions t =
     WryteOptions
@@ -63,8 +62,8 @@ defWryteOptions :: IsString t => WryteOptions t
 defWryteOptions =
     WryteOptions "    " " "
 
-newtype Wryte t a = Wryte { unWryte :: RWS (WryteOptions t) t WryteState a }
-    deriving (MonadReader (WryteOptions t), MonadWriter t, MonadState WryteState, Functor, Applicative, Monad)
+newtype Wryte t a = Wryte { unWryte :: RWS (WryteOptions t) t (WryteState t) a }
+    deriving (MonadReader (WryteOptions t), MonadWriter t, MonadState (WryteState t), Functor, Applicative, Monad)
 
 runWryte :: Monoid t => IsString t => WryteOptions t -> Wryte t a -> (a, t)
 runWryte opts a = evalRWS (unWryte a) opts defWryteState
@@ -78,7 +77,10 @@ wryte :: StrLen t
       -> Wryte t ()
 wryte x = do
     atLineStart <- gets wryteAtLineStart
-    when atLineStart $ wryteIndent >> wryteAlign
+    when atLineStart $ do
+        indent <- mconcat . reverse <$> gets wryteIndentStack
+        tell indent
+        modify (\s -> s { wryteCurrentColumn = strlen indent })
     modify (\s -> s
         { wryteAtLineStart = False
         , wryteCurrentColumn = wryteCurrentColumn s + strlen x
@@ -88,38 +90,30 @@ wryte x = do
 instance (StrLen t, Monoid t, IsString t) => IsString (Wryte t ()) where
     fromString = wryte . fromString
 
-wryteIndent :: Monoid t => Wryte t ()
-wryteIndent = do
-    indentLevel <- gets wryteIndentLevel
-    indentToken <- asks wryteIndentToken
-    let indentStr = mconcat . replicate indentLevel $ indentToken
-    tell indentStr
-
-wryteAlign :: Monoid t => Wryte t ()
-wryteAlign = do
-    alignLevel <- gets wryteAlignWidth
-    alignToken <- asks wryteAlignToken
-    let alignStr = mconcat . replicate alignLevel $ alignToken
-    tell alignStr
-
 indented :: Monoid t => Wryte t a -> Wryte t a
-indented x =
-    incIndent *> x <* decIndent
+indented x = do
+    ic <- asks wryteIndentToken
+    prefixed ic x
 
-incIndent :: Monoid t => Wryte t ()
-incIndent = modify (\s -> s { wryteIndentLevel = succ (wryteIndentLevel s) })
+pushIndent :: Monoid t => t -> Wryte t ()
+pushIndent ic =
+    modify (\s -> s { wryteIndentStack = ic : wryteIndentStack s })
 
-decIndent :: Monoid t => Wryte t ()
-decIndent = modify (\s -> s { wryteIndentLevel = pred (wryteIndentLevel s) })
+popIndent :: Monoid t => Wryte t ()
+popIndent =
+    modify (\s -> s { wryteIndentStack = drop 1 (wryteIndentStack s) })
 
-aligned :: Monoid t => Wryte t a -> Wryte t a
+prefixed :: Monoid t => t -> Wryte t a -> Wryte t a
+prefixed prefix x =
+    pushIndent prefix *> x <* popIndent
+
+aligned :: StrLen t => Monoid t => Wryte t a -> Wryte t a
 aligned x = do
-    oldAlign <- gets wryteAlignWidth
-    newAlign <- gets wryteCurrentColumn
-    setAlign (newAlign + oldAlign) *> x <* setAlign oldAlign
-    
-setAlign :: Monoid t => Int -> Wryte t ()
-setAlign n = modify $ \s -> s { wryteAlignWidth = n }
+    oldIndentW <- strlen . mconcat <$> gets wryteIndentStack
+    newIndentW <- gets wryteCurrentColumn
+    alignToken <- asks wryteAlignToken
+    let ic = mconcat $ replicate (newIndentW - oldIndentW) alignToken
+    prefixed ic x
 
 eol :: Monoid t
     => IsString t
