@@ -25,10 +25,11 @@ import Control.Monad.RWS
     , MonadState
     )
 import Data.String (IsString (..))
-import Data.Monoid (Monoid, mconcat)
 import Control.Monad (when)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as LText
+import Data.Monoid (Monoid, mconcat)
+import Control.Applicative ( Applicative, (*>), (<*), (<$>) )
 
 class StrLen a where
     strlen :: a -> Int

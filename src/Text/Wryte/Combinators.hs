@@ -5,6 +5,8 @@ where
 import Text.Wryte.Core
 import Data.String (IsString (..))
 import Control.Monad (when, forM_)
+import Data.Monoid (Monoid, mconcat)
+import Control.Applicative ( Applicative, pure, (*>), (<*), (<$>) )
 
 data ListOptions t =
     ListOptions
