@@ -1,13 +1,14 @@
 name: wryte
 version: 0.1.0.0
--- synopsis:
--- description:
-homepage: https://github.com/githubuser/wryte#readme
+synopsis: Pretty output for source generators
+description: Wryte provides a convenient API for semi-automatically indented
+             source code output.
+homepage: https://github.com/tdammers/wryte#readme
 license: BSD3
 license-file: LICENSE
-author: Author name here
-maintainer: example@example.com
-copyright: 2017 Author name here
+author: Tobias Dammers
+maintainer: tdammers@gmail.com
+copyright: 2017 Tobias Dammers
 category: Web
 build-type: Simple
 extra-source-files: README.md
@@ -34,4 +35,4 @@ test-suite wryte-test
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/wryte
+  location: https://github.com/tdammers/wryte
