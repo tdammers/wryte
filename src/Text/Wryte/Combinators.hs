@@ -7,6 +7,7 @@ import Data.String (IsString (..))
 import Control.Monad (when, forM_)
 import Data.Monoid (Monoid, mconcat)
 import Control.Applicative ( Applicative, pure, (*>), (<*), (<$>) )
+import Data.Char (isSpace)
 
 data ListOptions t =
     ListOptions
@@ -102,3 +103,11 @@ wryteList ls items = do
     when (listStyle ls == InlineList) $ wryte " "
     wryte (bracketStrClose . listBracketType $ ls)
     when (listStyle ls /= InlineList) eol
+
+importLines :: StrLen t
+            => IsString t
+            => Monoid t
+            => String
+            -> Wryte t ()
+importLines str = do
+    mapM_ (wryteLn . fromString) $ lines str

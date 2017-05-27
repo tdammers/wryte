@@ -47,4 +47,6 @@ code = do
             , wryteLn "to" >> wryte "do"
             , wryte "today"
             ]
+    wryteLn ""
+    indented $ importLines "Hello,\nworld\n  indented"
     wryteLn "Bye!"
