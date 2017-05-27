@@ -1,5 +1,5 @@
 name: wryte
-version: 0.1.1.0
+version: 0.2.0.0
 synopsis: Pretty output for source generators
 description: Wryte provides a convenient API for semi-automatically indented
              source code output.
